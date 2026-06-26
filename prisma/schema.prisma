@@ -1,0 +1,372 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["tradie"]
+}
+
+model Business {
+  id              String   @id @default(cuid())
+  name            String
+  ownerName       String?
+  ownerPhone      String?
+  ownerEmail      String?
+  address         String?
+  suburb          String?
+  state           String?
+  logoUrl         String?
+  googleReviewUrl String?
+  plan            Plan     @default(GROWTH)
+  laborRate       Float    @default(110)
+  gstNumber       String?
+  facebookTokens  Json?
+  fbMonitorGroups String[]
+  jobSeq          Int      @default(0)
+  invoiceSeq      Int      @default(0)
+  aiCallsToday    Int      @default(0)
+  aiCallsDate     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users          User[]
+  customers      Customer[]
+  vehicles       Vehicle[]
+  jobs           Job[]
+  invoices       Invoice[]
+  parts          Part[]
+  potentialLeads PotentialLead[]
+  reminders      Reminder[]
+  knowledgeBase  KnowledgeBase[]
+  suppliers      Supplier[]
+
+  @@map("businesses")
+  @@schema("tradie")
+}
+
+enum Plan {
+  GROWTH
+  ENTERPRISE
+  @@schema("tradie")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  businessId   String
+  name         String?
+  email        String   @unique
+  passwordHash String?
+  role         UserRole @default(MECHANIC)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  assignedJobs Job[]
+
+  @@map("users")
+  @@schema("tradie")
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  MECHANIC
+  @@schema("tradie")
+}
+
+model Customer {
+  id         String    @id @default(cuid())
+  businessId String
+  firstName  String
+  lastName   String?
+  email      String?
+  phone      String?
+  address    String?
+  suburb     String?
+  isVip      Boolean   @default(false)
+  notes      String?   @db.Text
+  source     String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  business  Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  vehicles  Vehicle[]
+  jobs      Job[]
+  reminders Reminder[]
+
+  @@map("customers")
+  @@schema("tradie")
+}
+
+model Vehicle {
+  id           String    @id @default(cuid())
+  businessId   String
+  customerId   String
+  make         String
+  model        String
+  year         Int?
+  rego         String?
+  regoExpiry   DateTime?
+  vin          String?
+  colour       String?
+  engineSize   String?
+  transmission String?
+  odometer     Int?
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  business  Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer  Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  jobs      Job[]
+  reminders Reminder[]
+
+  @@map("vehicles")
+  @@schema("tradie")
+}
+
+model Job {
+  id                String    @id @default(cuid())
+  businessId        String
+  jobNumber         String
+  customerId        String?
+  vehicleId         String?
+  assignedToId      String?
+  title             String
+  description       String?   @db.Text
+  status            JobStatus @default(BOOKED)
+  scheduledAt       DateTime?
+  completedAt       DateTime?
+  odometerIn        Int?
+  odometerOut       Int?
+  laborHours        Float?
+  laborCost         Float?
+  partsCost         Float?
+  totalValue        Float?
+  profit            Float?
+  photos            String[]
+  internalNotes     String?   @db.Text
+  aiUpsell          String?   @db.Text
+  aiPriceSuggestion Float?
+  quoteAccepted     Boolean   @default(false)
+  quoteSentAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  vehicle    Vehicle?  @relation(fields: [vehicleId], references: [id])
+  assignedTo User?     @relation(fields: [assignedToId], references: [id])
+  items      JobItem[]
+  invoice    Invoice?
+  partsUsed  JobPart[]
+
+  @@map("jobs")
+  @@schema("tradie")
+}
+
+enum JobStatus {
+  BOOKED
+  IN_PROGRESS
+  WAITING_PARTS
+  QUOTE_SENT
+  COMPLETED
+  INVOICED
+  PAID
+  CANCELLED
+  @@schema("tradie")
+}
+
+model JobItem {
+  id          String @id @default(cuid())
+  jobId       String
+  description String
+  qty         Float  @default(1)
+  unitPrice   Float
+  total       Float
+  type        String @default("labour")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_items")
+  @@schema("tradie")
+}
+
+model Part {
+  id          String   @id @default(cuid())
+  businessId  String
+  supplierId  String?
+  name        String
+  partNumber  String?
+  description String?
+  costPrice   Float?
+  sellPrice   Float?
+  stockQty    Int      @default(0)
+  minStock    Int      @default(1)
+  location    String?
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  usedOnJobs JobPart[]
+
+  @@map("parts")
+  @@schema("tradie")
+}
+
+model JobPart {
+  id        String @id @default(cuid())
+  jobId     String
+  partId    String
+  qty       Float  @default(1)
+  costPrice Float?
+  sellPrice Float?
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  part Part @relation(fields: [partId], references: [id])
+
+  @@map("job_parts")
+  @@schema("tradie")
+}
+
+model Supplier {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  phone      String?
+  email      String?
+  website    String?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  parts    Part[]
+
+  @@map("suppliers")
+  @@schema("tradie")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  businessId    String
+  jobId         String        @unique
+  invoiceNumber String
+  clientName    String
+  clientEmail   String?
+  subtotal      Float
+  gst           Float
+  total         Float
+  status        InvoiceStatus @default(DRAFT)
+  dueDate       DateTime?
+  sentAt        DateTime?
+  paidAt        DateTime?
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  job      Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+  @@schema("tradie")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  @@schema("tradie")
+}
+
+model Reminder {
+  id         String         @id @default(cuid())
+  businessId String
+  customerId String?
+  vehicleId  String?
+  type       ReminderType
+  message    String
+  dueAt      DateTime
+  sentAt     DateTime?
+  status     ReminderStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
+  vehicle  Vehicle?  @relation(fields: [vehicleId], references: [id])
+
+  @@map("reminders")
+  @@schema("tradie")
+}
+
+enum ReminderType {
+  SERVICE_DUE
+  REGO_EXPIRY
+  QUOTE_FOLLOWUP
+  PAYMENT_CHASE
+  CUSTOM
+  @@schema("tradie")
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  DONE
+  CANCELLED
+  @@schema("tradie")
+}
+
+model PotentialLead {
+  id             String              @id @default(cuid())
+  businessId     String
+  postId         String
+  postUrl        String?
+  groupId        String?
+  authorName     String?
+  postText       String              @db.Text
+  postedAt       DateTime?
+  matchScore     Int                 @default(0)
+  matchReason    String?
+  suggestedReply String              @db.Text
+  priceEstimate  String?
+  status         PotentialLeadStatus @default(PENDING)
+  smsSentAt      DateTime?
+  postedReplyAt  DateTime?
+  postedReplyId  String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, postId])
+  @@map("potential_leads")
+  @@schema("tradie")
+}
+
+enum PotentialLeadStatus {
+  PENDING
+  POSTED
+  DISMISSED
+  @@schema("tradie")
+}
+
+model KnowledgeBase {
+  id         String   @id @default(cuid())
+  businessId String
+  title      String
+  content    String   @db.Text
+  tags       String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_base")
+  @@schema("tradie")
+}

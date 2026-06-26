@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { autoInvoiceJob } from '@/lib/auto-invoice'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -42,6 +43,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       ...(data.status === 'COMPLETED' && { completedAt: new Date() }),
     },
   })
+
+  // Auto-invoice when job is marked complete
+  if (data.status === 'COMPLETED' && job.count > 0) {
+    autoInvoiceJob(id).catch(e => console.error('Auto-invoice failed:', e))
+  }
 
   return NextResponse.json({ updated: job.count })
 }

@@ -10,7 +10,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      {/* pt-14 on mobile for top bar, pb-16 for bottom nav, no padding on md+ */}
+      <main className="flex-1 overflow-y-auto pt-14 pb-16 md:pt-0 md:pb-0">
         {children}
       </main>
     </div>

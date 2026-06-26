@@ -35,24 +35,45 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-        <button
-          onClick={() => setShowNew(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-        >
-          + Add Customer
+    <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Customers</h1>
+        <button onClick={() => setShowNew(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          + Add
         </button>
       </div>
 
       <input
         type="text" value={search} onChange={e => setSearch(e.target.value)}
         placeholder="Search by name, email, phone..."
-        className="w-full mb-4 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full mb-4 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Cards on mobile, table on desktop */}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 && <p className="text-gray-400 text-sm text-center py-8">No customers yet</p>}
+        {filtered.map((c: any) => (
+          <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="font-semibold text-gray-900">{c.firstName} {c.lastName ?? ''}</div>
+                {c.suburb && <div className="text-xs text-gray-400">{c.suburb}</div>}
+              </div>
+              <div className="flex gap-2">
+                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{c.vehicles?.length ?? 0} vehicles</span>
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{c._count?.jobs ?? 0} jobs</span>
+              </div>
+            </div>
+            <div className="mt-2 space-y-1">
+              {c.phone && <div className="text-sm text-gray-600">📞 {c.phone}</div>}
+              {c.email && <div className="text-sm text-gray-600">✉️ {c.email}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -76,14 +97,10 @@ export default function CustomersPage() {
                 <td className="px-4 py-3 text-gray-700">{c.phone || '—'}</td>
                 <td className="px-4 py-3 text-gray-700">{c.email || '—'}</td>
                 <td className="px-4 py-3">
-                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-                    {c.vehicles?.length ?? 0} vehicles
-                  </span>
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{c.vehicles?.length ?? 0}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
-                    {c._count?.jobs ?? 0} jobs
-                  </span>
+                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{c._count?.jobs ?? 0}</span>
                 </td>
               </tr>
             ))}
@@ -92,8 +109,8 @@ export default function CustomersPage() {
       </div>
 
       {showNew && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Add Customer</h2>
               <button onClick={() => setShowNew(false)} className="text-gray-400 text-xl">✕</button>
@@ -103,48 +120,43 @@ export default function CustomersPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                   <input required value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                   <input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Suburb</label>
                   <input value={form.suburb} onChange={e => setForm(f => ({ ...f, suburb: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowNew(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium">Cancel</button>
+                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg text-sm font-medium">Cancel</button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium disabled:opacity-50">
                   {saving ? 'Saving...' : 'Add Customer'}
                 </button>
               </div>

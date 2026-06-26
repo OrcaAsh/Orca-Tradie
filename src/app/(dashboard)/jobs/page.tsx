@@ -57,9 +57,9 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Jobs Board</h1>
+    <div className="p-4 md:p-6 max-w-6xl mx-auto">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Jobs Board</h1>
         <button
           onClick={() => setShowNew(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -68,33 +68,37 @@ export default function JobsPage() {
         </button>
       </div>
 
-      {/* Filter */}
-      <div className="flex gap-2 mb-6 flex-wrap">
+      {/* Filter — scrollable on mobile */}
+      <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
         <button
           onClick={() => setFilter('')}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${filter === '' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200'}`}
+          className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${filter === '' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200'}`}
         >
-          All
+          All ({jobs.length})
         </button>
-        {STATUSES.map(s => (
-          <button
-            key={s}
-            onClick={() => setFilter(s === filter ? '' : s)}
-            className={`px-3 py-1 rounded-full text-xs font-medium border ${filter === s ? STATUS_COLORS[s] : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}
-          >
-            {s.replace('_', ' ')}
-          </button>
-        ))}
+        {STATUSES.map(s => {
+          const count = jobs.filter(j => j.status === s).length
+          if (count === 0) return null
+          return (
+            <button
+              key={s}
+              onClick={() => setFilter(s === filter ? '' : s)}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border ${filter === s ? STATUS_COLORS[s] : 'bg-white text-gray-500 border-gray-200'}`}
+            >
+              {s.replace('_', ' ')} ({count})
+            </button>
+          )
+        })}
       </div>
 
-      {/* Job list */}
+      {/* Job cards */}
       <div className="space-y-3">
-        {filtered.length === 0 && <p className="text-gray-400 text-sm">No jobs found.</p>}
+        {filtered.length === 0 && <p className="text-gray-400 text-sm py-8 text-center">No jobs found.</p>}
         {filtered.map((job: any) => (
           <div key={job.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-xs font-mono text-gray-400">{job.jobNumber}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${STATUS_COLORS[job.status]}`}>
                     {job.status.replace('_', ' ')}
@@ -103,7 +107,7 @@ export default function JobsPage() {
                 <div className="font-semibold text-gray-900">{job.title}</div>
                 <div className="text-sm text-gray-500 mt-0.5">
                   {job.customer ? `${job.customer.firstName} ${job.customer.lastName ?? ''}` : 'No customer'}
-                  {job.vehicle ? ` · ${job.vehicle.year ?? ''} ${job.vehicle.make} ${job.vehicle.model} ${job.vehicle.rego ? `(${job.vehicle.rego})` : ''}` : ''}
+                  {job.vehicle ? ` · ${job.vehicle.year ?? ''} ${job.vehicle.make} ${job.vehicle.model}` : ''}
                 </div>
                 {job.scheduledAt && (
                   <div className="text-xs text-gray-400 mt-1">
@@ -111,7 +115,7 @@ export default function JobsPage() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-end gap-2 shrink-0">
                 {job.totalValue && (
                   <div className="text-sm font-semibold text-green-700">${job.totalValue.toLocaleString()}</div>
                 )}
@@ -126,17 +130,17 @@ export default function JobsPage() {
             </div>
             {job.aiUpsell && (
               <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
-                💡 AI Upsell: {job.aiUpsell}
+                💡 {job.aiUpsell}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* New Job Modal */}
+      {/* New Job Modal — full screen on mobile */}
       {showNew && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">New Job</h2>
               <button onClick={() => setShowNew(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
@@ -147,7 +151,7 @@ export default function JobsPage() {
                 <input
                   required value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g. Full service + brake pads"
                 />
               </div>
@@ -157,7 +161,7 @@ export default function JobsPage() {
                   <select
                     value={form.customerId}
                     onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">— Select —</option>
                     {customers.map((c: any) => (
@@ -170,13 +174,13 @@ export default function JobsPage() {
                   <select
                     value={form.vehicleId}
                     onChange={e => setForm(f => ({ ...f, vehicleId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">— Select —</option>
                     {vehicles
                       .filter((v: any) => !form.customerId || v.customerId === form.customerId)
                       .map((v: any) => (
-                        <option key={v.id} value={v.id}>{v.year} {v.make} {v.model} {v.rego ? `(${v.rego})` : ''}</option>
+                        <option key={v.id} value={v.id}>{v.year} {v.make} {v.model}</option>
                       ))}
                   </select>
                 </div>
@@ -187,7 +191,7 @@ export default function JobsPage() {
                   <input
                     type="datetime-local" value={form.scheduledAt}
                     onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -195,32 +199,28 @@ export default function JobsPage() {
                   <input
                     type="number" value={form.odometerIn}
                     onChange={e => setForm(f => ({ ...f, odometerIn: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="km"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description / Notes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Customer complaint, work required..."
                 />
               </div>
-              <div className="flex gap-3">
-                <button
-                  type="button" onClick={() => setShowNew(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium"
-                >
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowNew(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg text-sm font-medium">
                   Cancel
                 </button>
-                <button
-                  type="submit" disabled={saving}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-                >
+                <button type="submit" disabled={saving}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium disabled:opacity-50">
                   {saving ? 'Creating...' : 'Create Job'}
                 </button>
               </div>

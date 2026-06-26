@@ -54,23 +54,59 @@ export default function InvoicesPage() {
     .reduce((sum, i) => sum + i.total, 0)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Invoices</h1>
           {totalOutstanding > 0 && (
-            <div className="text-sm text-orange-600 mt-0.5">
+            <div className="text-sm text-orange-600 mt-0.5 font-medium">
               ${totalOutstanding.toLocaleString()} outstanding
             </div>
           )}
         </div>
         <button onClick={() => setShowNew(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          + Create Invoice
+          + Create
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {invoices.length === 0 && <p className="text-gray-400 text-sm text-center py-8">No invoices yet</p>}
+        {invoices.map((inv: any) => (
+          <div key={inv.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-mono text-xs text-gray-500">{inv.invoiceNumber}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[inv.status]}`}>
+                    {inv.status}
+                  </span>
+                </div>
+                <div className="font-semibold text-gray-900">{inv.clientName}</div>
+                <div className="text-xs text-gray-500">{inv.job?.title}</div>
+                {inv.dueDate && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    Due {new Date(inv.dueDate).toLocaleDateString('en-AU')}
+                  </div>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <div className="font-bold text-gray-900">${inv.total.toLocaleString()}</div>
+                {inv.status === 'SENT' && (
+                  <button onClick={() => markPaid(inv.id)}
+                    className="mt-2 text-xs bg-green-600 text-white px-3 py-1 rounded-full">
+                    Mark Paid
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
@@ -119,8 +155,8 @@ export default function InvoicesPage() {
       </div>
 
       {showNew && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Create Invoice</h2>
               <button onClick={() => setShowNew(false)} className="text-gray-400 text-xl">✕</button>
@@ -138,7 +174,7 @@ export default function InvoicesPage() {
                       subtotal: job?.totalValue ? String(job.totalValue) : '',
                     }))
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">— Select completed job —</option>
                   {uninvoiced.map((j: any) => (
                     <option key={j.id} value={j.id}>{j.jobNumber} — {j.title}</option>
@@ -148,33 +184,33 @@ export default function InvoicesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Client Name *</label>
                 <input required value={form.clientName} onChange={e => setForm(f => ({ ...f, clientName: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Client Email</label>
                 <input type="email" value={form.clientEmail} onChange={e => setForm(f => ({ ...f, clientEmail: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subtotal (ex GST) *</label>
                 <input required type="number" step="0.01" value={form.subtotal} onChange={e => setForm(f => ({ ...f, subtotal: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 {form.subtotal && (
                   <div className="text-xs text-gray-500 mt-1">
-                    GST: ${(parseFloat(form.subtotal) * 0.1).toFixed(2)} · Total: ${(parseFloat(form.subtotal) * 1.1).toFixed(2)}
+                    Total inc. GST: ${(parseFloat(form.subtotal) * 1.1).toFixed(2)}
                   </div>
                 )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                 <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowNew(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium">Cancel</button>
+                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg text-sm font-medium">Cancel</button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium disabled:opacity-50">
                   {saving ? 'Creating...' : 'Create Invoice'}
                 </button>
               </div>

@@ -22,6 +22,7 @@ model Business {
   googleReviewUrl String?
   plan            Plan     @default(GROWTH)
   laborRate       Float    @default(110)
+  defaultMarkup   Float    @default(30)
   gstNumber       String?
   facebookTokens  Json?
   fbMonitorGroups String[]

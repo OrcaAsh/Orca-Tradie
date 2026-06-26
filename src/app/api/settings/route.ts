@@ -29,6 +29,7 @@ export async function PATCH(req: Request) {
       suburb: data.suburb,
       state: data.state,
       laborRate: data.laborRate ? parseFloat(data.laborRate) : undefined,
+      defaultMarkup: data.defaultMarkup ? parseFloat(data.defaultMarkup) : undefined,
       gstNumber: data.gstNumber,
       googleReviewUrl: data.googleReviewUrl,
     },

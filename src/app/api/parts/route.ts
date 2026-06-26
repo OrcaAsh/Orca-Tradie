@@ -22,14 +22,23 @@ export async function POST(req: Request) {
   const businessId = (session.user as any).businessId
 
   const data = await req.json()
+
+  const costPrice = data.costPrice ? parseFloat(data.costPrice) : undefined
+  const markup    = data.markup ? parseFloat(data.markup) : undefined
+  const sellPrice = data.sellPrice
+    ? parseFloat(data.sellPrice)
+    : costPrice && markup
+      ? Math.round(costPrice * (1 + markup / 100) * 100) / 100
+      : undefined
+
   const part = await prisma.part.create({
     data: {
       businessId,
       name: data.name,
       partNumber: data.partNumber,
       description: data.description,
-      costPrice: data.costPrice ? parseFloat(data.costPrice) : undefined,
-      sellPrice: data.sellPrice ? parseFloat(data.sellPrice) : undefined,
+      costPrice,
+      sellPrice,
       stockQty: data.stockQty ? parseInt(data.stockQty) : 0,
       minStock: data.minStock ? parseInt(data.minStock) : 1,
       location: data.location,

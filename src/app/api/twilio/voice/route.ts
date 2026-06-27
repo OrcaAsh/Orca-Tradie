@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }) ?? await prisma.business.findFirst()
   if (!business) return twiml('')
 
-  const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000)
+  const thirtyMinsAgo = new Date(Date.now() - 5 * 60 * 1000)
   const existing = await prisma.missedCallLead.findUnique({
     where: { businessId_phoneNumber: { businessId: business.id, phoneNumber: from } },
   })

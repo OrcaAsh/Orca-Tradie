@@ -12,7 +12,7 @@ import { generateFirstMessage } from '@/lib/missed-call-chatbot'
 import { validateTwilioSignature } from '@/lib/twilio/validate'
 
 async function fireTextBack(from: string, businessId: string, businessName: string, twilioPhone: string) {
-  const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000)
+  const thirtyMinsAgo = new Date(Date.now() - 5 * 60 * 1000)
   const existing = await prisma.missedCallLead.findUnique({
     where: { businessId_phoneNumber: { businessId, phoneNumber: from } },
   })

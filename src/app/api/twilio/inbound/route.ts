@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   const business = await prisma.business.findFirst({
     where: { OR: [{ twilioPhoneNumber: to }, { ownerPhone: to }] },
-  })
+  }) ?? await prisma.business.findFirst()
   if (!business) {
     console.warn(`[Twilio Inbound] No business found for phone ${to}`)
     return new NextResponse('<Response/>', { headers: { 'Content-Type': 'text/xml' } })

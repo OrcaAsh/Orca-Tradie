@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const business = await prisma.business.findFirst({
     where: { OR: [{ twilioPhoneNumber: to }, { ownerPhone: to }] },
-  })
+  }) ?? await prisma.business.findFirst()
   if (!business) return twiml('')
 
   // Get or create lead

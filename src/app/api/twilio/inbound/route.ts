@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
     return new NextResponse('<Response/>', { headers: { 'Content-Type': 'text/xml' } })
   }
 
+  console.log(`[Twilio Inbound] from=${from} to=${to} ownerPhone=${ownerPhone ?? 'NOT SET'} publicUrl=${publicUrl}`)
+
   if (!ownerPhone) {
     // No forwarding — play message and fire text-back in background
     if (from && to) {
@@ -75,9 +77,11 @@ export async function POST(req: NextRequest) {
 
   // Forward call to owner; on no-answer Twilio POSTs to /api/twilio/voice
   // answerOnBridge="true" means voicemail doesn't count as answered → status = no-answer
+  const actionUrl = `${publicUrl}/api/twilio/voice`
+  console.log(`[Twilio Inbound] Dialing owner ${ownerPhone}, action=${actionUrl}`)
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="20" action="${publicUrl}/api/twilio/voice" answerOnBridge="true">
+  <Dial timeout="20" action="${actionUrl}" answerOnBridge="true">
     <Number>${ownerPhone}</Number>
   </Dial>
 </Response>`

@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   const dialCallStatus = body.get('DialCallStatus') as string | null
   const from           = body.get('From') as string
   const to             = body.get('To') as string
+  console.log(`[Twilio Voice] HIT — CallStatus=${callStatus} DialCallStatus=${dialCallStatus} from=${from} to=${to}`)
 
   // DialCallStatus is the result of the <Dial> (no-answer/busy/failed/completed/answered)
   // If DialCallStatus is present (dial action callback), use it; otherwise fall back to CallStatus

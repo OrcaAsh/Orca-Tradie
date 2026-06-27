@@ -9,12 +9,19 @@ import { prisma } from '@/lib/prisma'
 import { generateFirstMessage } from '@/lib/missed-call-chatbot'
 
 export async function POST(req: NextRequest) {
-  const body      = await req.formData()
-  const callStatus = body.get('CallStatus') as string
-  const from       = body.get('From') as string
-  const to         = body.get('To') as string
+  const body           = await req.formData()
+  const callStatus     = body.get('CallStatus') as string
+  const dialCallStatus = body.get('DialCallStatus') as string | null
+  const from           = body.get('From') as string
+  const to             = body.get('To') as string
 
-  if (!['no-answer', 'busy', 'failed'].includes(callStatus)) {
+  // DialCallStatus is the result of the <Dial> (no-answer/busy/failed/completed/answered)
+  // If DialCallStatus is present (dial action callback), use it; otherwise fall back to CallStatus
+  const effectiveStatus = dialCallStatus ?? callStatus
+
+  // Only text back if owner didn't actually answer
+  if (!['no-answer', 'busy', 'failed'].includes(effectiveStatus)) {
+    console.log(`[Twilio Voice] Owner answered (${effectiveStatus}), no text-back needed`)
     return NextResponse.json({ ok: true })
   }
 

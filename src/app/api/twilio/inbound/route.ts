@@ -74,9 +74,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Forward call to owner; on no-answer Twilio POSTs to /api/twilio/voice
+  // answerOnBridge="true" means voicemail doesn't count as answered → status = no-answer
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="20" action="${publicUrl}/api/twilio/voice">
+  <Dial timeout="20" action="${publicUrl}/api/twilio/voice" answerOnBridge="true">
     <Number>${ownerPhone}</Number>
   </Dial>
 </Response>`

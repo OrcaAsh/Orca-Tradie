@@ -23,6 +23,7 @@ model Business {
   plan            Plan     @default(GROWTH)
   laborRate       Float    @default(110)
   defaultMarkup   Float    @default(30)
+  twilioPhoneNumber String?
   gstNumber       String?
   facebookTokens  Json?
   fbMonitorGroups String[]
@@ -43,6 +44,7 @@ model Business {
   reminders      Reminder[]
   knowledgeBase  KnowledgeBase[]
   suppliers      Supplier[]
+  missedCallLeads MissedCallLead[]
 
   @@map("businesses")
   @@schema("tradie")
@@ -369,5 +371,61 @@ model KnowledgeBase {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@map("knowledge_base")
+  @@schema("tradie")
+}
+
+model MissedCallLead {
+  id               String              @id @default(cuid())
+  businessId       String
+  phoneNumber      String
+  callerName       String?
+  category         CallLeadCategory    @default(COLD)
+  urgency          CallUrgency         @default(NORMAL)
+  serviceRequested String?
+  notes            String?             @db.Text
+  lastContactAt    DateTime            @default(now())
+  convertedToJob   Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  business Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  messages MissedCallMessage[]
+
+  @@unique([businessId, phoneNumber])
+  @@map("missed_call_leads")
+  @@schema("tradie")
+}
+
+model MissedCallMessage {
+  id        String          @id @default(cuid())
+  leadId    String
+  role      CallMessageRole
+  content   String          @db.Text
+  createdAt DateTime        @default(now())
+
+  lead MissedCallLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("missed_call_messages")
+  @@schema("tradie")
+}
+
+enum CallLeadCategory {
+  HOT
+  WARM
+  COLD
+  URGENT
+  @@schema("tradie")
+}
+
+enum CallUrgency {
+  NORMAL
+  HIGH
+  URGENT
+  @@schema("tradie")
+}
+
+enum CallMessageRole {
+  USER
+  ASSISTANT
   @@schema("tradie")
 }

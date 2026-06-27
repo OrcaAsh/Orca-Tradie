@@ -12,7 +12,9 @@ const nav = [
   { href: '/suppliers',  label: 'Suppliers',   icon: '🏭' },
   { href: '/invoices',   label: 'Invoices',    icon: '💰' },
   { href: '/reminders',  label: 'Reminders',   icon: '🔔' },
-  { href: '/leads',      label: 'FB Leads',    icon: '📣' },
+  { href: '/leads',         label: 'FB Leads',     icon: '📣' },
+  { href: '/missed-calls',  label: 'Missed Calls', icon: '📲' },
+  { href: '/knowledge',     label: 'Knowledge',    icon: '🧠' },
   { href: '/settings',   label: 'Settings',    icon: '⚙️' },
 ]
 

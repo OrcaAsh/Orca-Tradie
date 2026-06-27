@@ -156,7 +156,13 @@ export default function MissedCallsPage() {
                   {selected.serviceRequested && (
                     <div className="text-sm text-gray-600 mt-1">🔧 {selected.serviceRequested}</div>
                   )}
-                  {selected.notes && (
+                  {selected.callSummary && (
+                    <div className="text-sm bg-blue-50 border border-blue-100 rounded-lg p-2 mt-2">
+                      <span className="font-medium text-blue-700">📞 Call summary: </span>
+                      <span className="text-blue-600">{selected.callSummary}</span>
+                    </div>
+                  )}
+                  {selected.notes && !selected.callSummary && (
                     <div className="text-sm text-gray-500 mt-1 italic">{selected.notes}</div>
                   )}
                 </div>

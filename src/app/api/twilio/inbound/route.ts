@@ -75,13 +75,18 @@ export async function POST(req: NextRequest) {
     return new NextResponse(twiml, { headers: { 'Content-Type': 'text/xml' } })
   }
 
-  // Forward call to owner. When Dial ends (owner answers/misses/busy),
-  // Twilio POSTs DialCallStatus to the action URL.
-  const actionUrl = `${publicUrl}/api/twilio/voice`
+  // Forward call to owner with recording. When Dial ends, Twilio POSTs to action URL.
+  // Recording is posted to /api/twilio/recording when processing completes.
+  const actionUrl     = `${publicUrl}/api/twilio/voice`
+  const recordingUrl  = `${publicUrl}/api/twilio/recording`
   console.log(`[Twilio Inbound] Dialing owner ${ownerPhone}, action=${actionUrl}`)
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="20" action="${actionUrl}">
+  <Dial timeout="20" action="${actionUrl}"
+        record="record-from-answer-dual-channel"
+        recordingStatusCallback="${recordingUrl}"
+        recordingStatusCallbackMethod="POST"
+        recordingStatusCallbackEvent="completed">
     <Number>${ownerPhone}</Number>
   </Dial>
 </Response>`

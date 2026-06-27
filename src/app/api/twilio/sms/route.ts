@@ -71,6 +71,35 @@ export async function POST(req: NextRequest) {
   // Save AI reply
   await prisma.missedCallMessage.create({ data: { leadId: lead.id, role: 'ASSISTANT', content: aiMessage } })
 
+  // Auto-create a draft job for HOT or URGENT leads that mention a service
+  if (ai && ['HOT', 'URGENT'].includes(ai.category) && ai.serviceRequested && !lead.convertedToJob) {
+    try {
+      const updatedBusiness = await prisma.business.update({
+        where: { id: business.id },
+        data: { jobSeq: { increment: 1 } },
+      })
+      const jobNumber = `JOB-${String(updatedBusiness.jobSeq).padStart(4, '0')}`
+      const callerName = ai.callerName ?? lead.callerName ?? 'Unknown (missed call)'
+      await prisma.job.create({
+        data: {
+          businessId: business.id,
+          jobNumber,
+          title: ai.serviceRequested,
+          description: `Auto-created from missed call text-back.\nCaller: ${callerName} (${from})\nNotes: ${ai.notes ?? 'None'}`,
+          status: 'BOOKED',
+          internalNotes: `Lead category: ${ai.category}. Urgency: ${ai.urgency}. Created automatically from SMS conversation.`,
+        },
+      })
+      await prisma.missedCallLead.update({
+        where: { id: lead.id },
+        data: { convertedToJob: true },
+      })
+      console.log(`[Twilio SMS] Auto-created job ${jobNumber} for ${from} (${ai.category})`)
+    } catch (e: any) {
+      console.error('[Twilio SMS] Auto-job creation failed:', e?.message)
+    }
+  }
+
   // Send SMS reply via Twilio
   const twilio = (await import('twilio')).default
   const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)

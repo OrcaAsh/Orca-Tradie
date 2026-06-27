@@ -41,35 +41,42 @@ export async function POST(req: NextRequest) {
   const history = lead.messages.map(m => ({ role: m.role as 'USER' | 'ASSISTANT', content: m.content }))
   history.push({ role: 'USER', content: body })
 
-  // Generate AI reply
-  const ai = await generateMissedCallReply(
-    business.id,
-    history,
-    { callerName: lead.callerName ?? undefined, serviceRequested: lead.serviceRequested ?? undefined }
-  )
+  // Generate AI reply (fall back to a simple message if AI fails)
+  let aiMessage = "Thanks for getting in touch! We'll get back to you shortly. 😊"
+  let ai: Awaited<ReturnType<typeof generateMissedCallReply>> | null = null
+  try {
+    ai = await generateMissedCallReply(
+      business.id,
+      history,
+      { callerName: lead.callerName ?? undefined, serviceRequested: lead.serviceRequested ?? undefined }
+    )
+    aiMessage = ai.message
+  } catch (e: any) {
+    console.error('[Twilio SMS] AI reply failed, using fallback:', e?.message)
+  }
 
   // Update lead with AI-extracted info
   await prisma.missedCallLead.update({
     where: { id: lead.id },
     data: {
-      callerName:      ai.callerName      ?? lead.callerName,
-      category:        ai.category        as any,
-      urgency:         ai.urgency         as any,
-      serviceRequested: ai.serviceRequested ?? lead.serviceRequested,
-      notes:           ai.notes           ?? lead.notes,
-      lastContactAt:   new Date(),
+      callerName:       ai?.callerName       ?? lead.callerName,
+      category:         (ai?.category        ?? lead.category) as any,
+      urgency:          (ai?.urgency         ?? lead.urgency) as any,
+      serviceRequested: ai?.serviceRequested ?? lead.serviceRequested,
+      notes:            ai?.notes            ?? lead.notes,
+      lastContactAt:    new Date(),
     },
   })
 
   // Save AI reply
-  await prisma.missedCallMessage.create({ data: { leadId: lead.id, role: 'ASSISTANT', content: ai.message } })
+  await prisma.missedCallMessage.create({ data: { leadId: lead.id, role: 'ASSISTANT', content: aiMessage } })
 
   // Send SMS reply via Twilio
   const twilio = (await import('twilio')).default
   const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
-  await client.messages.create({ from: to, to: from, body: ai.message })
+  await client.messages.create({ from: to, to: from, body: aiMessage })
 
-  console.log(`[Twilio SMS] Replied to ${from} (${ai.category}): ${ai.message.substring(0, 60)}`)
+  console.log(`[Twilio SMS] Replied to ${from}: ${aiMessage.substring(0, 60)}`)
   return twiml('')
 }
 

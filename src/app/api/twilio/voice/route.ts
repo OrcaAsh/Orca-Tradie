@@ -16,11 +16,17 @@ export async function POST(req: NextRequest) {
   const callStatus     = body.get('CallStatus') as string | null
   console.log(`[Twilio Voice] HIT — from=${from} to=${to} DialCallStatus=${dialCallStatus} CallStatus=${callStatus}`)
 
-  // DialCallStatus = result of the <Dial> attempt
-  // CallStatus = status of the parent inbound call (set when caller hangs up early)
+  // DialCallStatus is only present in the Dial action callback.
+  // If absent, this is the Call Status Changes URL firing — ignore it,
+  // the Dial action already handled it.
+  if (!dialCallStatus) {
+    console.log(`[Twilio Voice] No DialCallStatus — Call Status Changes callback, ignoring`)
+    return twiml('')
+  }
+
   // Only send text-back if the owner didn't answer
   const missed = ['no-answer', 'busy', 'failed']
-  if (dialCallStatus && !missed.includes(dialCallStatus)) {
+  if (!missed.includes(dialCallStatus)) {
     console.log(`[Twilio Voice] Owner answered (DialCallStatus=${dialCallStatus}), skipping text-back`)
     return twiml('')
   }

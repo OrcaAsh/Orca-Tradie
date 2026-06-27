@@ -9,13 +9,21 @@ import { prisma } from '@/lib/prisma'
 import { generateFirstMessage } from '@/lib/missed-call-chatbot'
 
 export async function POST(req: NextRequest) {
-  const body = await req.formData()
-  const from = body.get('From') as string
-  const to   = body.get('To') as string
-  console.log(`[Twilio Voice] HIT — from=${from} to=${to}`)
+  const body           = await req.formData()
+  const from           = body.get('From') as string
+  const to             = body.get('To') as string
+  const dialCallStatus = body.get('DialCallStatus') as string | null
+  const callStatus     = body.get('CallStatus') as string | null
+  console.log(`[Twilio Voice] HIT — from=${from} to=${to} DialCallStatus=${dialCallStatus} CallStatus=${callStatus}`)
 
-  // This endpoint is only reached via <Redirect> after the owner doesn't answer.
-  // If owner answered, the call ends and this never runs.
+  // DialCallStatus = result of the <Dial> attempt
+  // CallStatus = status of the parent inbound call (set when caller hangs up early)
+  // Only send text-back if the owner didn't answer
+  const missed = ['no-answer', 'busy', 'failed']
+  if (dialCallStatus && !missed.includes(dialCallStatus)) {
+    console.log(`[Twilio Voice] Owner answered (DialCallStatus=${dialCallStatus}), skipping text-back`)
+    return twiml('')
+  }
 
   const business = await prisma.business.findFirst({
     where: { OR: [{ twilioPhoneNumber: to }, { ownerPhone: to }] },

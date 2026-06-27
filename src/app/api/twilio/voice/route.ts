@@ -9,27 +9,18 @@ import { prisma } from '@/lib/prisma'
 import { generateFirstMessage } from '@/lib/missed-call-chatbot'
 
 export async function POST(req: NextRequest) {
-  const body           = await req.formData()
-  const callStatus     = body.get('CallStatus') as string
-  const dialCallStatus = body.get('DialCallStatus') as string | null
-  const from           = body.get('From') as string
-  const to             = body.get('To') as string
-  console.log(`[Twilio Voice] HIT — CallStatus=${callStatus} DialCallStatus=${dialCallStatus} from=${from} to=${to}`)
+  const body = await req.formData()
+  const from = body.get('From') as string
+  const to   = body.get('To') as string
+  console.log(`[Twilio Voice] HIT — from=${from} to=${to}`)
 
-  // DialCallStatus is the result of the <Dial> (no-answer/busy/failed/completed/answered)
-  // If DialCallStatus is present (dial action callback), use it; otherwise fall back to CallStatus
-  const effectiveStatus = dialCallStatus ?? callStatus
-
-  // Only text back if owner didn't actually answer
-  if (!['no-answer', 'busy', 'failed'].includes(effectiveStatus)) {
-    console.log(`[Twilio Voice] Owner answered (${effectiveStatus}), no text-back needed`)
-    return NextResponse.json({ ok: true })
-  }
+  // This endpoint is only reached via <Redirect> after the owner doesn't answer.
+  // If owner answered, the call ends and this never runs.
 
   const business = await prisma.business.findFirst({
     where: { OR: [{ twilioPhoneNumber: to }, { ownerPhone: to }] },
   }) ?? await prisma.business.findFirst()
-  if (!business) return NextResponse.json({ ok: true })
+  if (!business) return twiml('')
 
   const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000)
   const existing = await prisma.missedCallLead.findUnique({
@@ -38,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   if (existing && existing.lastContactAt > thirtyMinsAgo) {
     console.log(`[Twilio Voice] Duplicate skip for ${from}`)
-    return NextResponse.json({ ok: true })
+    return twiml('')
   }
 
   const lead = existing ?? await prisma.missedCallLead.create({
@@ -46,8 +37,8 @@ export async function POST(req: NextRequest) {
   })
 
   const msg = generateFirstMessage(business.name)
-  const twilio = (await import('twilio')).default
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
+  const twilioClient = (await import('twilio')).default
+  const client = twilioClient(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
 
   await Promise.all([
     client.messages.create({ from: to, to: from, body: msg }),
@@ -56,5 +47,12 @@ export async function POST(req: NextRequest) {
   ])
 
   console.log(`[Twilio Voice] Missed call text-back sent to ${from}. Lead: ${lead.id}`)
-  return NextResponse.json({ ok: true })
+  return twiml('')
+}
+
+function twiml(xml: string) {
+  return new NextResponse(
+    `<?xml version="1.0" encoding="UTF-8"?><Response>${xml}</Response>`,
+    { headers: { 'Content-Type': 'text/xml' } }
+  )
 }

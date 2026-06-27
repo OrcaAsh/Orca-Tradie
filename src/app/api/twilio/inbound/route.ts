@@ -75,15 +75,18 @@ export async function POST(req: NextRequest) {
     return new NextResponse(twiml, { headers: { 'Content-Type': 'text/xml' } })
   }
 
-  // Forward call to owner; on no-answer Twilio POSTs to /api/twilio/voice
-  // answerOnBridge="true" means voicemail doesn't count as answered → status = no-answer
-  const actionUrl = `${publicUrl}/api/twilio/voice`
-  console.log(`[Twilio Inbound] Dialing owner ${ownerPhone}, action=${actionUrl}`)
+  // Forward call to owner.
+  // If owner answers → both hang up → call ends → no further TwiML runs (no text-back).
+  // If owner doesn't answer (timeout) → caller is still on the line → Twilio continues
+  //   to the <Say> + <Redirect> below → text-back fires. No action callback needed.
+  console.log(`[Twilio Inbound] Dialing owner ${ownerPhone}`)
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="20" action="${actionUrl}" answerOnBridge="true">
+  <Dial timeout="20" answerOnBridge="true">
     <Number>${ownerPhone}</Number>
   </Dial>
+  <Say voice="Polly.Amy">Sorry we missed your call — we'll text you right back!</Say>
+  <Redirect method="POST">${publicUrl}/api/twilio/voice</Redirect>
 </Response>`
   return new NextResponse(twiml, { headers: { 'Content-Type': 'text/xml' } })
 }

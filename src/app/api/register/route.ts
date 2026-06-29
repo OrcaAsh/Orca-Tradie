@@ -3,7 +3,13 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
 export async function POST(req: Request) {
-  const { name, email, password, businessName, laborRate } = await req.json()
+  const { name, email, password, businessName, laborRate, registerToken } = await req.json()
+
+  // Require a secret token so only people you invite can register
+  const validToken = process.env.REGISTER_TOKEN
+  if (validToken && registerToken !== validToken) {
+    return NextResponse.json({ error: 'Invalid registration token' }, { status: 403 })
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) return NextResponse.json({ error: 'Email already in use' }, { status: 400 })

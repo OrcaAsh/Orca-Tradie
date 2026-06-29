@@ -14,9 +14,8 @@ export async function POST(req: NextRequest) {
   const to             = body.get('To') as string
   const dialCallStatus = body.get('DialCallStatus') as string | null
   const callStatus     = body.get('CallStatus') as string | null
-  console.log(`[Twilio Voice] HIT — from=${from} to=${to} DialCallStatus=${dialCallStatus} CallStatus=${callStatus}`)
-
   const dialCallDuration = parseInt(body.get('DialCallDuration') as string ?? '0')
+  console.log(`[V] DCS=${dialCallStatus} dur=${dialCallDuration} CS=${callStatus}`)
 
   // If no DialCallStatus this is the Call Status Changes URL firing — ignore,
   // the Dial action callback handles it.

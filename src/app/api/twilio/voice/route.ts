@@ -17,23 +17,20 @@ export async function POST(req: NextRequest) {
   const dialCallDuration = parseInt(body.get('DialCallDuration') as string ?? '0')
   console.log(`[V] DCS=${dialCallStatus} dur=${dialCallDuration} CS=${callStatus}`)
 
-  // If no DialCallStatus this is the Call Status Changes URL firing — ignore,
-  // the Dial action callback handles it.
-  if (!dialCallStatus) {
-    console.log(`[Twilio Voice] No DialCallStatus — ignoring Call Status Changes callback`)
+  // DialCallStatus = Dial action callback (owner answered/missed)
+  // If null = Call Status Changes URL (fires when inbound call ends)
+  // The Dial action callback never fires for this number, so we rely on Call Status Changes.
+  const effectiveStatus = dialCallStatus ?? callStatus ?? ''
+  const effectiveDuration = dialCallDuration
+
+  // Owner answered for real = completed with long duration, skip text-back
+  if (effectiveStatus === 'completed' && effectiveDuration >= 15) {
+    console.log(`[V] Owner answered (${effectiveDuration}s), skip`)
     return twiml('')
   }
 
-  // no-answer/busy/failed = definitely missed
-  // completed with short duration (< 15s) = voicemail picked up, treat as missed
-  // completed with long duration = owner actually answered, skip text-back
-  const missed = ['no-answer', 'busy', 'failed']
-  const voicemail = dialCallStatus === 'completed' && dialCallDuration < 15
-  if (!missed.includes(dialCallStatus) && !voicemail) {
-    console.log(`[Twilio Voice] Owner answered (${dialCallStatus} ${dialCallDuration}s), skipping text-back`)
-    return twiml('')
-  }
-  console.log(`[Twilio Voice] Missed/voicemail (${dialCallStatus} ${dialCallDuration}s), sending text-back`)
+  // Anything else = missed/voicemail/no-answer → send text-back
+  console.log(`[V] Sending text-back (${effectiveStatus} ${effectiveDuration}s)`)
 
   const business = await prisma.business.findFirst({
     where: { OR: [{ twilioPhoneNumber: to }, { ownerPhone: to }] },
